@@ -1,7 +1,7 @@
 # Paquetes externos
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-import re
+from typing import List
 
 # Paquetes internos
 from database import get_db
@@ -9,12 +9,12 @@ from model.note import Note
 from model.user import User
 from validate.note import *
 
-api = FastAPI()
+router = APIRouter(prefix="/notes", tags=["Notes"])
 
 """
 Creación de notas y asignación a usuarios.
 """
-@api.post("/notes", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
 def createNote(note: NoteCreate, db: Session = Depends(get_db)):
 
     # Comprobación de usuario
@@ -52,7 +52,7 @@ def createNote(note: NoteCreate, db: Session = Depends(get_db)):
 """
 Listar todas las notas.
 """
-@api.get("/notes", response_model=NoteResponse, status_code=status.HTTP_200_OK)
+@router.get("", response_model=List[NoteResponse], status_code=status.HTTP_200_OK)
 def listNotes(db: Session = Depends(get_db)):
 
     noteList = db.query(Note).all()
@@ -61,21 +61,15 @@ def listNotes(db: Session = Depends(get_db)):
 """
 Obtener el contenido de una nota.
 """
-@api.get("/notes/{note_id}", response_model=NoteResponse, status_code=status.HTTP_200_OK)
-def listNotes(note_id, db: Session = Depends(get_db)):
+@router.get("/{note_id}", response_model=NoteResponse, status_code=status.HTTP_200_OK)
+def getNote(note_id, db: Session = Depends(get_db)):
 
-    note = db.query(Note).filter(Note.id == note_id)
+    note = db.query(Note).filter(Note.id == note_id).first()
 
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found in database."
-        )
-
-    if len(note) > 1:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Persistance error."
         )
     
     return note
@@ -83,10 +77,12 @@ def listNotes(note_id, db: Session = Depends(get_db)):
 """
 Obtener notas que contengan una expresión.
 """
-@api.get("/notes/searchExp?query={expression}", response_model=NoteResponse, status_code=status.HTTP_200_OK)
-def searchNotesByExpression(expression, db: Session = Depends(get_db)):
+@router.get("/searchExp", response_model=List[NoteResponse], status_code=status.HTTP_200_OK)
+def searchNotesByExpression(expression: str = Query(...), db: Session = Depends(get_db)):
 
-    noteList = db.query(Note).filter(Note.content.ilike(f"%{expression}%")).all()
+    noteList = db.query(Note).filter(
+        (Note.content.ilike(f"%{expression}%")) | (Note.title.ilike(f"%{expression}%"))
+    ).all()
 
     if not noteList:
         raise HTTPException(
@@ -99,10 +95,10 @@ def searchNotesByExpression(expression, db: Session = Depends(get_db)):
 """
 Obtener notas de un usuario.
 """
-@api.get("/notes/searchUsr?query={userName}", response_model=NoteResponse, status_code=status.HTTP_200_OK)
-def searchNotesByUser(userName, db: Session = Depends(get_db)):
+@router.get("/searchUsr", response_model=List[NoteResponse], status_code=status.HTTP_200_OK)
+def searchNotesByUser(userName: str = Query(...), db: Session = Depends(get_db)):
 
-    user = db.query(User).filter(User.name == userName)
+    user = db.query(User).filter(User.name == userName).first()
 
     if not user:
         raise HTTPException(
@@ -110,7 +106,7 @@ def searchNotesByUser(userName, db: Session = Depends(get_db)):
             detail=f"There is no user with the name {userName}."
         )
 
-    noteList = db.query(Note).filter(Note.user == userName).all()
+    noteList = db.query(Note).filter(Note.user_id == user.id).all()
 
     if not noteList:
         raise HTTPException(
@@ -123,16 +119,17 @@ def searchNotesByUser(userName, db: Session = Depends(get_db)):
 """
 Eliminar una nota.
 """
-@api.delete("/notes", status_code=status.HTTP_202_ACCEPTED)
-def deleteNote(note_id: NoteDelete, db: Session = Depends(get_db)):
-
-    note = db.query(Note).filter(Note.id == note_id)
+@router.delete("/{note_id}", status_code=status.HTTP_202_ACCEPTED)
+def deleteNote(note_id: int, db: Session = Depends(get_db)):
+    
+    note = db.query(Note).filter(Note.id == note_id).first()
     
     if not note:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Note not found in database."
-        )
-    else:
-        db.delete(note)
-        db.commit()
+        raise HTTPException(status_code=404,
+                            detail="Note not found."
+                            )
+    
+    db.delete(note)
+    db.commit()
+
+    return {"message": f"Nota {note_id} borrada correctamente."}

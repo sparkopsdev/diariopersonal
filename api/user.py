@@ -1,18 +1,19 @@
 # Paquetes externos
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import List
 
 # Paquetes internos
 from database import get_db
 from model.user import User
 from validate.user import *
 
-api = FastAPI()
+router = APIRouter(prefix="/users", tags=["Users"])
 
 """
 Creación de usuario.
 """
-@api.post("/users", response_model=UserCreate, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserCreate, status_code=status.HTTP_201_CREATED)
 def createUser(user: UserCreate, db: Session = Depends(get_db)):
 
     # Si el correo existe, da error porque ya está el usuario creado
@@ -40,8 +41,8 @@ def createUser(user: UserCreate, db: Session = Depends(get_db)):
 """
 Listado de usuarios.
 """
-@api.get("/users", response_model=UserResponse, status_code=status.HTTP_302_FOUND)
-def listUsers(user: UserResponse, db: Session = Depends(get_db)):
+@router.get("", response_model=List[UserResponse], status_code=status.HTTP_200_OK)
+def listUsers(db: Session = Depends(get_db)):
 
     userList = db.query(User).all()
     return userList

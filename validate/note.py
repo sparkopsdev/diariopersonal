@@ -10,15 +10,16 @@ import re
 from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import datetime
 
-
 # Validador del modelo base
 class NoteBase(BaseModel):
     title: str = Field(..., min_length=5, max_length=30, description="Título de la nota (mínimo 5 caracteres y máximo 30)")
-    content: str = Field(..., min_length=10, description="Contenido de la nota (mínimo 10 caracteres)")
+    # content: str = Field(..., min_length=10, description="Contenido de la nota (mínimo 10 caracteres)")
 
 # Validador para el endpoint de creación de notas
 class NoteCreate(NoteBase):
-    
+    file_path: str = Field(..., description="Ruta local del archivo .txt o .md")
+    user_id: int
+
     @field_validator("file_path")
     def correctFileExtension(cls, value):
         regex = r".*\.(md|txt)$"
@@ -32,9 +33,10 @@ class NoteCreate(NoteBase):
 class NoteResponse(NoteBase):
     id: int
     created_at: datetime
+    user_id: int
 
     class Config:
         orm_mode = True
 
-class NoteDelete():
+class NoteDelete(NoteBase):
     id: int
