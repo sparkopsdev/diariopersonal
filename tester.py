@@ -3,56 +3,94 @@ import json
 
 BASE_URL = "http://127.0.0.1:8000"
 
-def debug_notes():
-    r = requests.get(f"{BASE_URL}/notes")
-    print("\n🧠 DEBUG: notas en la base ->")
-    try:
-        for n in r.json():
-            print(f"  id={n.get('id')}, title={n.get('title')}, user_id={n.get('user_id')}")
-    except Exception:
-        print("  (no se pudo decodificar la respuesta)")
+def test_create_user(name: str, email: str, password: str):
 
-def test_create_user():
-    data = {"name": "Paloma RG", "email": "paloma@example.com", "password": "clave1234"}
+    data = {"name": name,
+            "email": email,
+            "password": password}
+    
+    print(f"Creating user: {name}\n")
+
     r = requests.post(f"{BASE_URL}/users", json=data)
-    print(r.status_code, r.json())
+
+    resp = r.json()
+    requestOk = r.status_code
+
+    if requestOk == 200:
+        id = resp["id"]
+        print(f"User created correctly with id {id}")
+    else:
+        msg = resp["detail"]
+        print(f"There has been a problem registering the user due to {msg}\n")
 
 def test_list_users():
-    r = requests.get(f"{BASE_URL}/users")
-    print(r.status_code, r.json())
+    
+    print(f"####### User list #######\n")
 
-def test_create_note():
-    with open("nota1.txt", "w", encoding="utf-8") as f:
-        f.write("Esta es una nota de prueba.")
-    data = {"title": "Primera nota", "file_path": "./nota1.txt", "user_id": 1}
+    r = requests.get(f"{BASE_URL}/users")
+
+    resp = r.json()
+    requestOk = r.status_code
+
+    if requestOk == 200:
+        for i, user in enumerate(resp, start=1):
+            print(f"User {i}: {user['name']}")
+    else:
+        msg = resp["detail"]
+        print(f"There has been a problem listing the users due to {msg}\n")
+
+
+def test_create_note(title: str, file_path: str, user_id: int):
+    print(f"\n\n####### Create note #######\n")
+
+    data = {"title": title,
+            "file_path": file_path,
+            "user_id": user_id}
+
     r = requests.post(f"{BASE_URL}/notes", json=data)
-    print(r.status_code, r.json())
+    resp = r.json()
+    requestOk = r.status_code
+
+    if requestOk == 200 or 201:
+        print("Note created correctly as:\n")
+        print(f"Title: {resp['title']}")
+        print(f"User ID: {resp['user_id']}")
 
 def test_list_notes():
-    r = requests.get(f"{BASE_URL}/notes")
-    print(r.status_code, r.json())
+    print(f"\n\n####### Notes list #######\n")
 
-def test_get_note():
-    r = requests.get(f"{BASE_URL}/notes/7")
-    print(r.status_code, r.json())
+    r = requests.get(f"{BASE_URL}/users")
 
-def test_search_by_expression():
-    print("\n➡️ Buscando notas que contengan 'prueba'...")
-    r = requests.get(f"{BASE_URL}/notes/searchExp", params={"expression": "prueba"})
-    print(r.status_code, end=" ")
-    try:
-        print(r.json())
-    except:
-        print("(sin respuesta JSON válida)")
+    resp = r.json()
+    requestOk = r.status_code
 
-def test_search_by_user():
-    print("\n➡️ Buscando notas del usuario 'Paloma RG'...")
-    r = requests.get(f"{BASE_URL}/notes/searchUsr", params={"userName": "Paloma RG"})
-    print(r.status_code, end=" ")
-    try:
-        print(r.json())
-    except:
-        print("(sin respuesta JSON válida)")
+    print(resp)
+
+    if requestOk == 200:
+        for note in resp:
+            id_ = note.get('id')
+            title = note.get('title', '(sin título)')
+            print(f"Note {id_}: {title}")
+    else:
+        msg = resp["detail"]
+        print(f"There has been a problem listing the users due to {msg}\n")
+
+def test_get_note(id: int):
+    print(f"\n\n####### Get note by id #######\n")
+
+    r = requests.get(f"{BASE_URL}/notes/{id}")
+
+    resp = r.json()
+    requestOk = r.status_code
+
+    print(r.status_code)
+
+    if requestOk == 200 or 201:
+        print(f"Note title: {resp['title']}\n")
+        print(f"Note title: {resp['content']}")
+    else:
+        print(f"Note not found in database")
+
 
 def test_delete_note():
     r = requests.delete(f"{BASE_URL}/notes/1")
@@ -60,14 +98,12 @@ def test_delete_note():
 
 
 if __name__ == "__main__":
-    print("🔍 Iniciando pruebas de la API...")
-    test_create_user()
+    print("########### Iniciando pruebas de la API ###########")
+    test_create_user("Pedro", "pedro@romero.com", "superSeguro123")
+    test_create_user("Pedrito", "paloma@romero.com", "superSeguro123")
     test_list_users()
-    test_create_note()
+    #test_create_note("Probando", "./notas/limones.txt", 1)
     test_list_notes()
-    test_get_note()
-    test_search_by_expression()
-    test_search_by_user()
-    debug_notes()
+    test_get_note(1)
     test_delete_note()
     print("\n✅ Todas las pruebas finalizadas.")

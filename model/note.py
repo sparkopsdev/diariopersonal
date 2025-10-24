@@ -24,5 +24,5 @@ class Note(Base):
     file_path = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.now)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)       # Primary key del usuario (campo id en "User") COMPROBAR EN ENDPOINT QUE EXISTA
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)       # Primary key del usuario (campo id en "User")
     user = relationship("User", back_populates="notes")                     # Relación con el campo "notes" de la instancia del usuario

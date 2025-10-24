@@ -1,5 +1,6 @@
 # Paquetes externos
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/notes", tags=["Notes"])
 """
 Creación de notas y asignación a usuarios.
 """
-@router.post("", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=NoteCreate, status_code=status.HTTP_201_CREATED)
 def createNote(note: NoteCreate, db: Session = Depends(get_db)):
 
     # Comprobación de usuario
@@ -36,6 +37,7 @@ def createNote(note: NoteCreate, db: Session = Depends(get_db)):
     try:
         with open(note.file_path, "r", encoding="utf-8") as f:
             newNote.content = f.read()
+            print(newNote.content)
     except FileNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -74,48 +76,6 @@ def getNote(note_id, db: Session = Depends(get_db)):
     
     return note
 
-"""
-Obtener notas que contengan una expresión.
-"""
-@router.get("/searchExp", response_model=List[NoteResponse], status_code=status.HTTP_200_OK)
-def searchNotesByExpression(expression: str = Query(...), db: Session = Depends(get_db)):
-
-    noteList = db.query(Note).filter(
-        (Note.content.ilike(f"%{expression}%")) | (Note.title.ilike(f"%{expression}%"))
-    ).all()
-
-    if not noteList:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No notes contain: {expression}."
-        )
-    else:
-        return noteList
-    
-"""
-Obtener notas de un usuario.
-"""
-@router.get("/searchUsr", response_model=List[NoteResponse], status_code=status.HTTP_200_OK)
-def searchNotesByUser(userName: str = Query(...), db: Session = Depends(get_db)):
-
-    user = db.query(User).filter(User.name == userName).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"There is no user with the name {userName}."
-        )
-
-    noteList = db.query(Note).filter(Note.user_id == user.id).all()
-
-    if not noteList:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"The user {userName} doesn't have any notes."
-        )
-    else:
-        return noteList
-    
 """
 Eliminar una nota.
 """

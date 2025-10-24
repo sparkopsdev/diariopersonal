@@ -19,7 +19,7 @@ class UserBase(BaseModel):
 
 # Validador para el endpoint de creación de usuarios
 class UserCreate(UserBase):
-    
+
     @field_validator("email")
     def correctEmailFormat(cls, value):
         regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"

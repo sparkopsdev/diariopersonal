@@ -1,4 +1,8 @@
 # Proyecto para la evaluación del módulo de PA: Diario Personal
+
+# Repositorio
+https://github.com/sparkopsdev/diariopersonal
+
 # Concepto general
 
 El Diario Personal de Notas de Texto es una API REST desarrollada en FastAPI que permite a los usuarios registrarse y guardar notas personales en una base de datos.
@@ -47,6 +51,32 @@ Representa una nota del diario asociada a un archivo de texto. Sus campos son:
 | `POST`           | `/notes`                       | Crear nota desde un archivo local      |
 | `GET`            | `/notes`                       | Listar todas las notas                 |
 | `GET`            | `/notes/{id}`                  | Ver contenido completo de una nota     |
-| `GET`            | `/notes/search?query=palabra`  | Buscar notas que contengan una palabra |
 | `DELETE`         | `/notes/{id}`                  | Eliminar una nota                      |
 
+## Funcionamiento
+
+El servidor se pone en marcha de la siguiente manera (se asume que se ejecutan los comandos desde el directorio clonado):
+
+```
+# Preparar el entorno python:
+python -m venv venv
+source venv/bin/activate # .\venv\Scripts\activate en Windows
+pip install -r requirements.txt
+
+# Ejecutar el servidor:
+uvicorn server:app --reload
+```
+
+Una vez esté el servidor corriendo, tendremos que ejecutar el tester en una nueva pestaña de la consola:
+
+```
+# Abrir pestaña nueva de la consola y ejecutar:
+python tester.py
+```
+
+Veremos entonces los distintos Endpoints REST de la API ejecutándose y dando los resultados oportunos.
+
+
+## Notas adicionales
+
+El tester no está del todo funcional debido a falta de tiempo dedicada al desarrollo. Planeo dejarlo listo en los próximos días (con fecha de este commit) pero entiendo que se califique la entrega a partir de él.
